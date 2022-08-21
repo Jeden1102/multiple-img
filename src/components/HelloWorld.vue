@@ -1,45 +1,117 @@
 <template>
   <div class="hello">
     <h1>{{ msg }}</h1>
-    <p>
-      For a guide and recipes on how to configure / customize this project,<br>
-      check out the
-      <a href="https://cli.vuejs.org" target="_blank" rel="noopener">vue-cli documentation</a>.
-    </p>
-    <h3>Installed CLI Plugins</h3>
-    <ul>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-vuex" target="_blank" rel="noopener">vuex</a></li>
-    </ul>
-    <h3>Essential Links</h3>
-    <ul>
-      <li><a href="https://vuejs.org" target="_blank" rel="noopener">Core Docs</a></li>
-      <li><a href="https://forum.vuejs.org" target="_blank" rel="noopener">Forum</a></li>
-      <li><a href="https://chat.vuejs.org" target="_blank" rel="noopener">Community Chat</a></li>
-      <li><a href="https://twitter.com/vuejs" target="_blank" rel="noopener">Twitter</a></li>
-      <li><a href="https://news.vuejs.org" target="_blank" rel="noopener">News</a></li>
-    </ul>
-    <h3>Ecosystem</h3>
-    <ul>
-      <li><a href="https://router.vuejs.org" target="_blank" rel="noopener">vue-router</a></li>
-      <li><a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a></li>
-      <li><a href="https://github.com/vuejs/vue-devtools#vue-devtools" target="_blank" rel="noopener">vue-devtools</a></li>
-      <li><a href="https://vue-loader.vuejs.org" target="_blank" rel="noopener">vue-loader</a></li>
-      <li><a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">awesome-vue</a></li>
-    </ul>
+  <input class="hide" ref="images" id="images" @change="setFiles" type="file" multiple >
+  <input class="hide" ref="imagesChange" id="imagesChange" @change="imagesChange" type="file" multiple >
+  <div class="img-container">
+    <label for="images" class="img-box">
+      <img class="img"  src="../assets/add.png" alt="">
+    </label>
+    <div class="img-box">
+      <img class="img" src="../assets/dog.svg" alt="">
+    </div>
+  </div>
+  <div v-if="filePreviewUrls.length > 0" id="preview">
+    <div class="img-container" :id="`img-container-${idx}`"  v-for="(url,idx) in filePreviewUrls">
+      <label @click="setIdxLabel(idx)" for="imagesChange" class="img-box">
+        <img class="img" src="../assets/replace.png" alt="">
+      </label>
+      <div class="img-box">
+        <img class="img"  :src="url" alt="">
+      </div>
+      <div @click="removeFile(idx)" class="img-box">
+        <img class="img" src="../assets/image.png" alt="">
+      </div>
+    </div>
+  </div>
+  <button @click="sendData">Send</button>
+  <Dropdown
+    :options="cities"
+    v-on:selected="validateSelection"
+    v-on:filter="getDropdownValues"
+    :disabled="false"
+    name="zipcode"
+    :maxItem="10"
+    placeholder="Please select an option">
+</Dropdown>
+  <div class="alert-box">
+{{ errorMsg }}
+  </div>
   </div>
 </template>
 
 <script>
+import Dropdown from 'vue-simple-search-dropdown';
 export default {
   name: 'HelloWorld',
+  components:{
+    Dropdown,
+  },
+  data() {
+    return {
+      files:null,
+      filePreviewUrls : [],
+      imgArray : [],
+      errorMsg : '',
+      idxChange:null,
+      cities:[{ id: 1, name: 'Option 1'}, { id: 2, name: 'Option 2'}],
+    }
+  },
   props: {
     msg: String
+  },
+  methods:{
+    setFiles(ev){
+      this.files = this.$refs.images.files;
+      let arr = [];
+      var files = this.files;
+      for (var i = 0; i < files.length; i++) {
+      this.imgArray.push(this.$refs.images.files[i]);
+      }
+      console.log(this.imgArray)
+      if(this.imgArray.length > 7){
+        this.imgArray = this.imgArray.splice(0,7);
+        this.errorMsg = "Zbyt dużo zdjęć, max. 7 zostało dogranych"
+      }
+      this.setUrls();
+    },
+    setUrls(){
+      this.filePreviewUrls = []
+      for (var i = 0; i < this.imgArray.length; i++) {
+          let file = this.imgArray[i];
+          let  src = (window.URL || window.webkitURL).createObjectURL(file);
+          this.filePreviewUrls.push(src)
+      }
+    },
+    removeFile(idx,ev){
+      this.imgArray.splice(idx,1)
+      this.setUrls();
+    },
+    setIdxLabel(idx){
+
+      this.idxChange = idx;
+    },
+    imagesChange(){
+      console.log(this.imgArray)
+      if(this.$refs.imagesChange.files[0]){
+      let file  = this.$refs.imagesChange.files[0]
+      this.imgArray[this.idxChange] = file;
+      this.setUrls()
+      }
+
+    },
+    sendData(){
+      console.log(this.imgArray)
+    }
   }
 }
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+.hide{
+  display:none;
+}
 h3 {
   margin: 40px 0 0;
 }
@@ -53,5 +125,39 @@ li {
 }
 a {
   color: #42b983;
+}
+.remove-item{
+  animation:remove-item 1s;
+}
+.img-container{
+  display:flex;
+  margin:8px 0;
+  gap:10px;
+  transition:.3s;
+  .img-box{
+    display:flex;
+    width:50px;
+    height:50px;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(228, 228, 228);
+    border-radius: 5px;
+    .img{
+      max-width:40px;
+      max-height:40px;
+    }
+  }
+}
+@keyframes remove-item {
+  0%{
+    transform: translate(0);
+  }
+  10%{
+    transform: translate(20px,0);
+  }
+  100%{
+    transform: translate(-1000px,0);
+    opacity: 0;
+  }
 }
 </style>
