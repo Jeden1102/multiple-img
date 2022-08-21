@@ -12,7 +12,7 @@
     </div>
   </div>
   <div v-if="filePreviewUrls.length > 0" id="preview">
-    <div class="img-container" :id="`img-container-${idx}`"  v-for="(url,idx) in filePreviewUrls">
+    <div class="img-container" :id="`img-container-${idx}`"  v-for="(url,idx) in filePreviewUrls" :key="url">
       <label @click="setIdxLabel(idx)" for="imagesChange" class="img-box">
         <img class="img" src="../assets/replace.png" alt="">
       </label>
@@ -25,15 +25,11 @@
     </div>
   </div>
   <button @click="sendData">Send</button>
-  <Dropdown
-    :options="cities"
-    v-on:selected="validateSelection"
-    v-on:filter="getDropdownValues"
-    :disabled="false"
-    name="zipcode"
-    :maxItem="10"
-    placeholder="Please select an option">
-</Dropdown>
+  <label class="typo__label">Single select / dropdown</label>
+  <multiselect @search-change="testMethod" v-if="cities.length>0" v-model="value" deselect-label="Can't remove this value" track-by="name" label="name" placeholder="Select one" :maxElements="5" :options="cities" :searchable="true" :allow-empty="false" >
+    <template :limit="3" slot="singleLabel" slot-scope="{ option }"><strong>{{ option.name }}</strong></template>
+  </multiselect>
+  <pre class="language-json"><code>{{ value  }}</code></pre>
   <div class="alert-box">
 {{ errorMsg }}
   </div>
@@ -41,11 +37,12 @@
 </template>
 
 <script>
-import Dropdown from 'vue-simple-search-dropdown';
+import axios from 'axios'
+ import Multiselect from 'vue-multiselect'
 export default {
   name: 'HelloWorld',
   components:{
-    Dropdown,
+    Multiselect 
   },
   data() {
     return {
@@ -54,13 +51,32 @@ export default {
       imgArray : [],
       errorMsg : '',
       idxChange:null,
-      cities:[{ id: 1, name: 'Option 1'}, { id: 2, name: 'Option 2'}],
+      value : null,
+      cities:null,
     }
   },
   props: {
     msg: String
   },
+  mounted() {
+    axios.get("https://countriesnow.space/api/v0.1/countries/iso").then(res=>{
+      console.log(res.data)
+      this.cities = res.data.data
+    }).catch(err=>{
+      console.log(err)
+    })
+  },
   methods:{
+    testMethod(searchQuery, id){
+          axios.get("https://countriesnow.space/api/v0.1daw/countries/iso").then(res=>{
+      console.log(res.data)
+      this.cities = res.data.data
+    }).catch(err=>{
+      // this.cities = []
+      console.log(err)
+    })
+      console.log(searchQuery)
+    },
     setFiles(ev){
       this.files = this.$refs.images.files;
       let arr = [];
@@ -106,7 +122,6 @@ export default {
   }
 }
 </script>
-
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 .hide{
